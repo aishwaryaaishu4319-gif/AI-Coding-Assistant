@@ -1,138 +1,199 @@
 import streamlit as st
 from assistant import generate_response
 
-# ---------------- Page Config ----------------
+# -----------------------------
+# Page Configuration
+# -----------------------------
 st.set_page_config(
     page_title="AI Coding Assistant Pro",
     page_icon="🤖",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# ---------------- Session State ----------------
-if "history" not in st.session_state:
-    st.session_state.history = []
+# -----------------------------
+# Custom CSS
+# -----------------------------
+st.markdown("""
+<style>
+.main-title{    font-size:40px;
+    font-weight:bold;
+    color:#4F8BF9;
+}
+.sub-title{
+    font-size:18px;
+    color:gray;
+}
+.feature-box{
+    padding:15px;
+    border-radius:10px;
+    background-color:#f0f2f6;
+    text-align:center;
+    font-weight:bold;
+}
+.footer{
+    text-align:center;
+    color:gray;
+    padding-top:20px;
+}
+            </style>
+""", unsafe_allow_html=True)
 
-if "requests" not in st.session_state:
-    st.session_state.requests = 0
+# -----------------------------
+# Sidebar
+# -----------------------------
+with st.sidebar:
 
-# ---------------- Title ----------------
-st.title("🤖 AI Coding Assistant Pro")
-st.markdown("### Your Personal AI Programming Assistant")
+    st.title("🤖 AI Coding Assistant")
 
+    st.markdown("---")
+
+    feature = st.selectbox(
+        "Choose Feature",
+        [
+            "Code Generation",
+            "Code Explanation",
+            "Debug Code",
+            "Optimize Code",
+                        "Generate Test Cases",
+            "Convert Code"
+        ]
+    )
+
+    language = st.selectbox(
+        "Programming Language",
+        [
+            "Python",
+            "Java",
+            "C++",
+            "JavaScript",
+            "C"
+        ]
+    )
+
+    uploaded_file = st.file_uploader(
+        "Upload Source Code",
+                type=["py", "java", "cpp", "c", "js", "txt"]
+    )
+
+    st.markdown("---")
+
+    st.info("💡 Tip: Paste your code or upload a source file.")
+
+# -----------------------------
+# Header
+# -----------------------------
+st.markdown(
+    '<p class="main-title">🤖 AI Coding Assistant Pro</p>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<p class="sub-title">Generate, Explain, Debug and Optimize Code using AI</p>',
+    unsafe_allow_html=True
+)
 st.divider()
 
-# ---------------- Dashboard ----------------
+# -----------------------------
+# Feature Cards
+# -----------------------------
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric("📈 Total Requests", st.session_state.requests)
+    st.markdown(
+        '<div class="feature-box">📖 Explain Code</div>',
+        unsafe_allow_html=True
+    )
 
 with col2:
-    st.metric("📂 Uploaded Files", len(st.session_state.history))
-
+    st.markdown(
+        '<div class="feature-box">🐞 Debug Code</div>',
+        unsafe_allow_html=True
+    )
 with col3:
-    st.metric("⚡ AI Features", "6")
+    st.markdown(
+        '<div class="feature-box">⚡ Optimize Code</div>',
+        unsafe_allow_html=True
+    )
 
-st.divider()
+st.write("")
 
-# ---------------- Sidebar ----------------
-st.sidebar.title("⚙️ AI Features")
-
-feature = st.sidebar.selectbox(
-    "Choose Feature",
-    [
-        "Code Generation",
-        "Code Explanation",
-        "Bug Detection",
-        "Code Conversion",
-        "Documentation Generator",
-        "Unit Test Generator"
-    ]
+# -----------------------------
+# Code Input
+# -----------------------------
+user_input = st.text_area(
+    "💻 Enter your code or prompt",
+    height=320,
+    placeholder="Paste your code here or describe what you want..."
 )
-
-language = st.sidebar.selectbox(
-    "Programming Language",
-    [
-        "Python",
-        "Java",
-        "C",
-        "C++",
-        "JavaScript",
-        "SQL",
-        "HTML",
-        "CSS",
-        "React",
-        "NodeJS"
-    ]
-)
-
-uploaded_file = st.sidebar.file_uploader(
-    "Upload Code File",
-    type=["py", "java", "cpp", "c", "js", "txt"]
-)
-
-# ---------------- Input ----------------
+# -----------------------------
+# File Upload
+# -----------------------------
 if uploaded_file is not None:
-    code = uploaded_file.read().decode("utf-8")
-    st.success("✅ File Uploaded Successfully")
-else:
-    code = st.text_area(
-        "Enter your code or prompt",
-        height=300
-    )
+    file_content = uploaded_file.read().decode("utf-8")
+    user_input = file_content
 
-# ---------------- Generate ----------------
-if st.button("🚀 Generate Response", use_container_width=True):
+    st.success("✅ File uploaded successfully!")
 
-    if code.strip() == "":
-        st.warning("Please enter code or prompt.")
-        st.stop()
+    st.code(file_content, language=language.lower())
 
-    prompt = f"""
-Feature:
-{feature}
+st.write("")
 
-Programming Language:
-{language}
+# -----------------------------
+# Generate Button
+# -----------------------------
+if st.button("🚀 Generate AI Response", use_container_width=True):
 
-User Input:
-{code}
+    st.write("Button clicked!")
 
-Provide the best response.
-"""
+    if not user_input.strip():
+        st.warning("Please enter some code or prompt.")
+    else:
+        st.write("Calling AI...")
 
-    with st.spinner("AI is Thinking..."):
+        try:
+            response = generate_response(
+                prompt=user_input,
+                feature=feature,
+                language=language
+            )
 
-        result = generate_response(prompt)
+            st.success("AI Response Generated!")
 
-    st.session_state.requests += 1
+            st.write(response)
 
-    st.session_state.history.append(
-        {
-            "Feature": feature,
-            "Language": language,
-            "Response": result
-        }
-    )
-
-    st.success("Completed Successfully")
-
-    st.subheader("🤖 AI Response")
-
-    st.code(result)
-
-    st.download_button(
-        "⬇ Download Response",
-        result,
-        file_name="response.txt"
-    )
-
-# ---------------- History ----------------
+        except Exception as e:
+            st.error(str(e))
 st.divider()
 
-st.subheader("📜 History")
+# -----------------------------
+# Features Section
+# -----------------------------
+st.subheader("✨ Features")
 
-for item in reversed(st.session_state.history):
+col1, col2 = st.columns(2)
 
-    with st.expander(f"{item['Feature']} ({item['Language']})"):
-        st.code(item["Response"])
+with col1:
+    st.success("✔ Code Generation")
+    st.success("✔ Code Explanation")
+    st.success("✔ Debug Code")
+    st.success("✔ Code Optimization")
+
+with col2:
+    st.success("✔ Generate Test Cases")
+    st.success("✔ Multiple Languages")
+    st.success("✔ Upload Source Files")
+    st.success("✔ AI Powered by Groq")
+    st.divider()
+
+# -----------------------------
+# Footer
+# -----------------------------
+st.markdown(
+    """
+<div style="text-align:center;color:gray;padding:20px;">
+Developed with ❤️ using Python, Streamlit & Groq AI
+</div>
+""",
+    unsafe_allow_html=True
+)
